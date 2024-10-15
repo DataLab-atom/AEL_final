@@ -1,0 +1,26 @@
+[
+     {
+          "algorithm": "",
+          "code": "import torch\nimport numpy as np\ndef permute_edges(data):\n    node_num, _ = data.x.size()\n    _, edge_num = data.edge_index.size()\n    permute_num = int(edge_num * 0.2)\n\n    edge_index = data.edge_index.transpose(0, 1).numpy()\n\n    idx_add = np.random.choice(node_num, (permute_num, 2))\n\n    edge_index = edge_index[np.random.choice(edge_num, edge_num-permute_num, replace=False)]\n    data.edge_index = torch.tensor(edge_index).transpose_(0, 1)\n    return data\n",
+          "objective": 0.2525,
+          "other_inf": null
+     },
+     {
+          "algorithm": "",
+          "code": "import torch\nimport numpy as np\ndef drop_nodes(data):\n    node_num, _ = data.x.size()\n    _, edge_num = data.edge_index.size()\n    drop_num = int(node_num * 0.2)\n\n    idx_drop = np.random.choice(node_num, drop_num, replace=False)\n    idx_nondrop = [n for n in range(node_num) if not n in idx_drop]\n    idx_dict = {idx_nondrop[n]:n for n in list(range(node_num - drop_num))}\n\n    edge_index = data.edge_index.numpy()\n\n    adj = torch.zeros((node_num, node_num))\n    adj[edge_index[0], edge_index[1]] = 1\n    adj[idx_drop, :] = 0\n    adj[:, idx_drop] = 0\n    edge_index = adj.nonzero().t()\n\n    data.edge_index = edge_index\n    return data\n",
+          "objective": 0.24353,
+          "other_inf": null
+     },
+     {
+          "algorithm": "",
+          "code": "import torch\nimport numpy as np\ndef subgraph(data):\n\n    node_num, _ = data.x.size()\n    _, edge_num = data.edge_index.size()\n    sub_num = int(node_num * (1-0.2))\n\n    edge_index = data.edge_index.numpy()\n\n    idx_sub = [np.random.randint(node_num, size=1)[0]]\n    idx_neigh = set([n for n in edge_index[1][edge_index[0]==idx_sub[0]]])\n\n    count = 0\n    while len(idx_sub) <= sub_num:\n        count = count + 1\n        if count > node_num:\n            break\n        if len(idx_neigh) == 0:\n            break\n        sample_node = np.random.choice(list(idx_neigh))\n        if sample_node in idx_sub:\n            continue\n        idx_sub.append(sample_node)\n        idx_neigh.union(set([n for n in edge_index[1][edge_index[0]==idx_sub[-1]]]))\n\n    idx_drop = [n for n in range(node_num) if not n in idx_sub]\n    idx_nondrop = idx_sub\n    idx_dict = {idx_nondrop[n]:n for n in list(range(len(idx_nondrop)))}\n\n    edge_index = data.edge_index.numpy()\n\n    adj = torch.zeros((node_num, node_num))\n    adj[edge_index[0], edge_index[1]] = 1\n    adj[idx_drop, :] = 0\n    adj[:, idx_drop] = 0\n    edge_index = adj.nonzero().t()\n\n    data.edge_index = edge_index\n    return data\n",
+          "objective": 0.2587,
+          "other_inf": null
+     },
+     {
+          "algorithm": "",
+          "code": "import torch\nimport numpy as np\ndef mask_nodes(data):\n    node_num, feat_dim = data.x.size()\n    mask_num = int(node_num * 0.2)\n\n    idx_mask = np.random.choice(node_num, mask_num, replace=False)\n    data.x[idx_mask] = torch.tensor(np.random.normal(loc=0.5, scale=0.5, size=(mask_num, feat_dim)), dtype=torch.float32)\n\n    return data\n",
+          "objective": 0.26049,
+          "other_inf": null
+     }
+]
